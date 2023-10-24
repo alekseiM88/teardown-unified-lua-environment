@@ -1,0 +1,3 @@
+name = ULE Bootstrap Example
+author = TextureLikeSun/msn
+description = Example of defining multiple 'mods' from a single real mod.

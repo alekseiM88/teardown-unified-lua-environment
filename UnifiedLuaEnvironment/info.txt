@@ -1,0 +1,12 @@
+name = Unified Lua Environment
+author = TextureLikeSun/MSN
+description = [noupload] Mod manager/framework that allows the usage of mods that can be run in sub-contexts of a single real Lua context. Thus allowing multiple separate mods to directly interact with each other. Calling each other's functions and the like. 
+tags=Tool
+
+# If description contains [noupload] the description on Steam workshop will not be overwritten.
+# Available tags (comma-separated):
+# Map      - A custom map with no particular gameplay
+# Gameplay - Mod has a mission, objective or other gameplay
+# Asset    - A collection of assets for others to use
+# Vehicle  - Mod contains drivable, custom vehicles
+# Tool     - Mod adds a custom weapon or other tool
