@@ -5,4 +5,4 @@ regular mod to a ULE mod, as well as to point out some of the ways that ULE diff
 
 ### Licensing
 All files in this directory are property of Tuxedo Labs.  
-They are available here for the sake of providing examples for developers of how the Unified Lua Environment works.
+They are available here for the sake of providing an example for developers of how the Unified Lua Environment works.

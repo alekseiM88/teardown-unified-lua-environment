@@ -3,6 +3,6 @@ An unofficial framework/mod loader for the game Teardown, made to allow multiple
 
 
 ### Licensing
-All files in this repository **except for every file in the 'ULE Laser Gun Example' directory** are intended to be licensed under [The Unlicense](https://unlicense.org/).
+All files in this repository **except for every file in the 'ULE Laser Gun Example' directory** are licensed under [The Unlicense](https://unlicense.org/).
 
 See the aforementioned directory for information on the ownership and license of its contents.
