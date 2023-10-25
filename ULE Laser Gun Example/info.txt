@@ -1,0 +1,4 @@
+name = ULE Laser Gun
+author = Tuxedo Labs
+description = Built-in laser gun converted for ULE.
+tags = Tool

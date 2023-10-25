@@ -22,6 +22,8 @@ function init()
     cameraForward = nil
     
     ULE_name = "TLS Super Strength"
+    
+    --PrintMe()
 end
 
 
