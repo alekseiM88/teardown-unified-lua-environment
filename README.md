@@ -1,5 +1,5 @@
 # Unified Lua Environment
-An unofficial framework/mod loader for the game Teardown, made to allow multiple individual mods to run in more or less the same Lua context.
+An unofficial framework/mod loader for the game Teardown. Made to allow multiple individual mods to run in more or less the same Lua context.
 
 
 ### Licensing
