@@ -1,0 +1,1 @@
+Just to clarify: this is a unique implementation of super strength, made to showcase the ULE. It is not derived from any preexisting implementations of super strength.
