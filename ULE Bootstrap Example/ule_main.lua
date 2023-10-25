@@ -1,6 +1,6 @@
 
 function init()
-    -- The filenames supplied should not have any non-alphanumeric characters, as the filenames will be used to create their savegame registry keys
+    -- The filenames supplied should not have any non-alphanumeric characters, as the they will be used to create their savegame registry keys
     ULE_InitModListAndDestroySource(_G, 
     {
         ["Bootstrap Example #1"] = "exampleone.lua",
