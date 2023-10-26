@@ -12,55 +12,22 @@ lateInitCalled = lateInitCalled or false
 function init()
     ULE_Init()
 
-    -- find all mods with names that start with the uppercase ULE and try to add them.
-
-    --[[
-    local allMods = ListKeys("mods.available")
-    for i, key in ipairs(allMods) do
-        local modKey = "mods.available."..key
-        local modName = GetString(modKey..".name")
-        if string.sub(modName, 1, 3) == "ULE" then
-            --DebugPrint(GetString(modKey..".path"))
-            ULE_AddMod(modName, GetString(modKey..".path"))
-            --return "RAW:"..GetString(modKey..".path").."/"
-        end
-    end
-    ]]--
-    
+    -- Add and execute all enabled ULE-based mods.
     local allMods = ListKeys("savegame.mod.mods")
     for i, key in ipairs(allMods) do
     
         local fullKey = "mods.available."..key
 
         local modName = GetString(fullKey..".name")
-        --if string.sub(modName, 1, 3) == "ULE" then
+
         if not ULE_AddMod(modName, GetString(fullKey..".path"), key) then
             ClearKey("savegame.mod.mods."..key)
         end
-
-        --end
     end
 
-    -- proof of concept
-    --[[
-    gTables[1] = {}
-    DebugPrint(tostring(gTables[1].GetPlayerTransform))
-    --gTables[1].__index = _G
-    setmetatable(gTables[1], gMetatable)
-    DebugPrint(tostring(gTables[1].GetPlayerTransform))
-    
-    gTables[1].GetPlayerTransform = function() DebugPrint("test") end
-    DebugPrint(tostring(gTables[1].GetPlayerTransform))
-    DebugPrint(tostring(rawget(gTables[1], "GetPlayerTransform")))
-    
-    DebugPrint(tostring(GetPlayerTransform))
-    
-    gTables[1].GetPlayerTransform = nil
-    DebugPrint(tostring(gTables[1].GetPlayerTransform))
-    DebugPrint(tostring(rawget(gTables[1], "GetPlayerTransform")))
-    ]]--
 end
 
+-- This function mainly exists for deserialization.
 function ULE_Init()
     -- 'g' tables of all loaded mods
     ULE_mods = ULE_mods or {}
@@ -73,7 +40,7 @@ end
 -- run ULE_AddMod on a table of lua files with keys as names and values as local paths, then ULE_DestroyMod on the source.
 -- The filenames in paths should not have any non-alphanumeric characters, as the filenames will be used to create their savegame registry keys
 function ULE_InitModListAndDestroySource(context, paths)
-    DebugPrint("attempting bootstrap")
+
     -- add mods
     for name, path in pairs(paths) do
         ULE_AddMod(name, context.ULE_rawPath, context.ULE_modRegistryKey.."-"..string.gsub(path, ".lua", ""), path)
@@ -124,8 +91,7 @@ function ULE_AddMod(name, directory, regKey, filePath, reload)
     
     -- run init
     if not reload then
-        local modInit = rawget(modGTable, "init")
-        if modInit then modInit() end
+        ULE_ProtectedRawCall(modGTable, "init")
     end
     
     return true
@@ -153,13 +119,20 @@ function ULE_IncludeLua(context, path)
     luaFile()
 end
 
--- remove a mod from ULE_mods, fully clearing it from memory and all that
+-- remove a mod from ULE_mods, calling ULE_OnDestroy() and then set all present indices to nil
 -- name is key in ULE_mods table
 function ULE_DestroyMod(name)
     if name == nil then return end
    
-    local modOnDestroy = rawget(ULE_mods[name], "ULE_OnDestroy")
-    if modOnDestroy then modOnDestroy() end
+    local gTable = ULE_mods[name]
+    
+    ULE_ProtectedRawCall(gTable, "ULE_OnDestroy")
+    
+    -- remove metatable and nil out all indices of mod's gTable
+    setmetatable(gTable, nil)
+    for k, _ in pairs(gTable) do
+        gTable[k] = nil
+    end
    
     ULE_mods[name] = nil
 end
@@ -197,8 +170,7 @@ function tick(dt)
     if not lateInitCalled then
         local modLateInit = nil
         for modName, gTable in pairs(ULE_mods) do
-            local modLateInit = rawget(gTable, "ULE_LateInit")
-            if modLateInit then modLateInit() end
+            ULE_ProtectedRawCall(gTable, "ULE_LateInit")
         end
         lateInitCalled = true
     end
@@ -206,34 +178,29 @@ function tick(dt)
     -- Update lerp values, so the overridden SetValue functions correctly.
     ULE_UpateLerpValues(dt)
 
-    local modTick = nil
+
     for modName, gTable in pairs(ULE_mods) do
-        local modTick = rawget(gTable, "tick")
-        if modTick then modTick(dt) end
+        ULE_ProtectedRawCall(gTable, "tick", dt)
     end
 end
 
 
 function update(dt)
-    local modUpdate = nil
     for modName, gTable in pairs(ULE_mods) do
-        local modUpdate = rawget(gTable, "update")
-        if modUpdate then modUpdate(dt) end
+        ULE_ProtectedRawCall(gTable, "update", dt)
     end
 end
 
 
 function draw(dt)
-    local modDraw = nil
     for modName, gTable in pairs(ULE_mods) do
-        local modDraw = rawget(gTable, "draw")
-        if modDraw then modDraw(dt) end
+        ULE_ProtectedRawCall(gTable, "draw", dt)
     end
 end
 
 
 function handleCommand(command)
-    -- strange saving
+    -- partial reinit of all loaded mods
     if command == "quickload" then
         ULE_Init()
     
@@ -242,9 +209,7 @@ function handleCommand(command)
         end
     end
 
-    local modHandle = nil
     for modName, gTable in pairs(ULE_mods) do
-        local modHandle = rawget(gTable, "handleCommand")
-        if modHandle then modHandle(command) end
+        ULE_ProtectedRawCall(gTable, "handleCommand", command)
     end
 end
