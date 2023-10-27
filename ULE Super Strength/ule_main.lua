@@ -12,6 +12,7 @@ function init()
     heldBody = nil
     holdDistance = 1
     currentTool = ""
+    hasThrown = false
     
     -- held position in body's space
     heldPosition = nil
@@ -46,12 +47,19 @@ function IsNumberInTable(number, list)
     return false
 end
 
+function SetPlayerTool(toolName)
+    SetString("game.player.tool", toolName)
+    SetInt("game.player.toolselect", 0)
+end
+
 function DropBody()
     heldBody = nil
-    SetString("game.player.tool", currentTool)
+    SetPlayerTool(currentTool)
 end
 
 function AttemptGrab()
+
+    hasThrown = false
 
     local hit, dist, normal, shape = QueryRaycast(cameraTf.pos, cameraForward, 5)
     
@@ -115,7 +123,11 @@ function AttemptGrab()
         rotationTf = Transform(Vec(), bodyTf.rot)
         
         rotationTf = TransformToLocalTransform(cameraTf, rotationTf)
-        currentTool = GetString("game.player.tool")
+        
+        local playerTool = GetString("game.player.tool")
+        if playerTool ~= "none" then
+            currentTool = playerTool
+        end
     else
         heldBody = nil
     end
@@ -134,14 +146,17 @@ function tick(dt)
         if heldBody == nil and InputPressed("grab") then
             AttemptGrab()
         end
-    elseif heldBody ~= nil then
+    elseif heldBody ~= nil and not hasThrown then
         DropBody()
+    end
+    
+    -- override tool
+    if heldBody ~= nil or hasThrown then
+        SetPlayerTool("none")
     end
     
     if heldBody ~= nil then
         SetBool("game.player.grabbing", true) 
-        SetString("game.player.tool", "none")
-        SetInt("game.player.toolselect", 0)
         
         SetToolTransform(Transform(Vec(0,-2,0)))
 
@@ -151,8 +166,16 @@ function tick(dt)
             local bodyTf = GetBodyTransform(heldBody)
             local globalHeldPosition = TransformToParentPoint(bodyTf, heldPosition)
             ApplyBodyImpulse(heldBody, globalHeldPosition, VecScale(cameraForward, 40 * GetBodyMass(heldBody)))
-            DropBody()
+            
+            heldBody = nil
+            
+            hasThrown = true
         end
+    end
+    
+    if hasThrown and not InputDown("usetool") then
+        hasThrown = false
+        SetPlayerTool(currentTool)
     end
     
     

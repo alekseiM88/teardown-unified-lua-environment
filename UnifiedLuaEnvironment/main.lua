@@ -17,8 +17,9 @@ function init()
     for i, key in ipairs(allMods) do
     
         local fullKey = "mods.available."..key
-
-        local modName = GetString(fullKey..".name")
+        
+        
+        local modName = GetString(fullKey..".listname")
 
         if not ULE_AddMod(modName, GetString(fullKey..".path"), key) then
             ClearKey("savegame.mod.mods."..key)
@@ -54,11 +55,17 @@ end
 function ULE_AddMod(name, directory, regKey, filePath, reload)
 
     local filePath = filePath or "ule_main.lua"
+    local absoluteDirectory = directory.."/"..filePath
 
-    local newMod = loadfile(directory.."/"..filePath)
+    if not HasFile("RAW:"..absoluteDirectory) then
+        DebugPrint("ULE: Could not load mod of name '"..name.."', file '"..filePath.."' not found.")
+        return false
+    end
+
+    local newMod = loadfile(absoluteDirectory)
 
     if type(newMod) ~= "function" then
-        DebugPrint("ULE: Could not load mod of name '"..name.."'")
+        DebugPrint("ULE: Could not load mod of name '"..name.."', loadfile could not parse. Probably a syntax error.")
         return false
     end
    

@@ -1,4 +1,4 @@
 name = [ULE] Super Strength
 author = TextureLikeSun/erratis
-description = [noupload] Custom super strength implementation for the Unified Lua Environment.
+description = [noupload]Custom super strength implementation for the Unified Lua Environment.
 tags=Gameplay
