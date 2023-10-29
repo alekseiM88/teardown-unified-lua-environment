@@ -1,6 +1,5 @@
 -- Super Strength for ULE
-
---ULE_IncludeLua(_G, "include_test.lua")
+ULE_IncludeLua(_G, "strength_shared.lua")
 
 MINHELDDIST = 0.7
 MAXHELDDIST = 5
@@ -9,22 +8,31 @@ HOLERADIUS = 0.8 -- default is 0.8
 
 
 function init()
+    -- Call InitializePersistentData, a function included from strength_shared.lua
+    InitializePersistentData()
+
     heldBody = nil
-    holdDistance = 1
-    currentTool = ""
-    hasThrown = false
     
+    holdDistance = 1
     -- held position in body's space
     heldPosition = nil
-    -- held rotation in camera's space?
+    -- held rotation in camera's space, stored as transform so I can use the less confusing functions for moving
+    -- it in and out of local space
     rotationTf = nil
     
+    hasThrown = false
+    
+    -- the tool the player was holding before picking up a body
+    lastHeldTool = ""
+
     cameraTf = nil
     cameraForward = nil
     
-    ULE_name = "TLS Super Strength"
+    allowGrabbingStaticBodies = GetBool(_G, _defaultStaticGrabStateKey)
+    allowGrabbingStaticBodiesUiTimer = 999
+    allowGrabbingStaticBodiesUiMessageDuration = 1.25
     
-    --PrintMe()
+    ULE_name = "TLS Super Strength"
 end
 
 
@@ -56,7 +64,7 @@ function DropBody()
     if heldBody == nil then return end
     
     heldBody = nil
-    SetPlayerTool(currentTool)
+    SetPlayerTool(lastHeldTool)
 end
 
 function ThrowBody()
@@ -86,7 +94,7 @@ function AttemptGrab()
     heldBody = GetShapeBody(shape)
     
     -- grabbing a chunk of a static body, try to break it off
-    if not IsBodyDynamic(heldBody) then 
+    if allowGrabbingStaticBodies and not IsBodyDynamic(heldBody) then 
         local hitPosition = VecAdd(VecScale(cameraForward, dist), cameraTf.pos)
         local queryBounds = Vec(HOLERADIUS,HOLERADIUS,HOLERADIUS)
         
@@ -143,7 +151,7 @@ function AttemptGrab()
         
         local playerTool = GetString("game.player.tool")
         if playerTool ~= "none" then
-            currentTool = playerTool
+            lastHeldTool = playerTool
         end
     else
         heldBody = nil
@@ -158,7 +166,13 @@ function tick(dt)
     cameraTf = GetPlayerCameraTransform(true)
     cameraForward = TransformToParentVec(cameraTf, Vec(0,0,-1))
 
-    -- attempt to grab a body if grab is pressed
+    -- toggle static body grabbing is the toggle button is pressed and the toggle feature is enabled
+    if InputPressed(GetString(_G, _staticGrabToggleButtonKey)) and GetBool(_G, _enableStaticGrabTogglingKey) then
+        allowGrabbingStaticBodies = not allowGrabbingStaticBodies
+        allowGrabbingStaticBodiesUiTimer = 0
+    end
+
+    -- attempt to grab a body if grab is both held AND pressed
     if InputDown("grab") and GetBool("game.player.canusetool") then
         if heldBody == nil and InputPressed("grab") and not InputDown("usetool") then
             AttemptGrab()
@@ -188,7 +202,7 @@ function tick(dt)
     -- end throw state if throw button is unpressed
     if hasThrown and not InputDown("usetool") then
         hasThrown = false
-        SetPlayerTool(currentTool)
+        SetPlayerTool(lastHeldTool)
     end
     
     
@@ -238,4 +252,27 @@ function update(dt)
 end
 
 
-
+function draw(dt)
+    -- display a message in the top left for a while if grabbing static bodies was toggled
+    if allowGrabbingStaticBodiesUiTimer < allowGrabbingStaticBodiesUiMessageDuration then
+        UiPush()
+            UiFont("bold.ttf",48)
+            UiAlign("top left")
+            UiTranslate(24, 100)
+            
+            local opacity = (allowGrabbingStaticBodiesUiMessageDuration-allowGrabbingStaticBodiesUiTimer)/(allowGrabbingStaticBodiesUiMessageDuration*0.125)
+            
+            UiColor(1, 1, 1, opacity)
+            
+            UiTextOutline(0,0,0,opacity,0.4)
+            
+            if allowGrabbingStaticBodies then
+                UiText("Static body grabbing is now enabled.")
+            else
+                UiText("Static body grabbing is now disabled.")
+            end
+   
+        UiPop()
+        allowGrabbingStaticBodiesUiTimer = allowGrabbingStaticBodiesUiTimer + dt
+    end
+end

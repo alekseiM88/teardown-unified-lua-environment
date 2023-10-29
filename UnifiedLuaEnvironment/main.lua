@@ -104,28 +104,6 @@ function ULE_AddMod(name, directory, regKey, filePath, reload)
     return true
 end
 
---#include replacement that work in ULE, paths should still work as relative, you will probably always pass in _G as the context
-function ULE_IncludeLua(context, path)
-
-    if context.rawPath == nil then
-        DebugPrint("ULE: Could not include file '"..path.."', context is invalid.")
-        return
-    end
-
-    local luaFile = loadfile(context.rawPath.."/"..path)
-    
-    if type(luaFile) ~= "function" then
-        DebugPrint("ULE: Could not include file '"..path.."', file might not exist.")
-        return
-    end
-    
-    -- set environment
-    setfenv(luaFile, context)
-
-    -- execute
-    luaFile()
-end
-
 -- remove a mod from ULE_mods, calling ULE_OnDestroy() and then set all present indices to nil
 -- name is key in ULE_mods table
 function ULE_DestroyMod(name)

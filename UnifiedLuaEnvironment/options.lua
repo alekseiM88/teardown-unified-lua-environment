@@ -124,6 +124,7 @@ function openOptionsFile(mod)
     tickMain = nil
     update = nil
     
+    ULE_rawPath = mod.path
     ULE_modPath = "RAW:"..mod.path.."/"
     ULE_modRegistryKey = mod.keyName
     
@@ -142,6 +143,7 @@ function openOptionsFile(mod)
     tick = tempTick
     
     Menu = fakeMenu
+    
     
     if init then
         init()
