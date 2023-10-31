@@ -28,9 +28,13 @@ function init()
     cameraTf = nil
     cameraForward = nil
     
+    uiMessageDuration = 1.25
+    
     allowGrabbingStaticBodies = GetBool(_G, _defaultStaticGrabStateKey)
     allowGrabbingStaticBodiesUiTimer = 999
-    allowGrabbingStaticBodiesUiMessageDuration = 1.25
+    
+    superStrengthEnabledUiTimer = 999
+    superStrengthEnabled = true
     
     ULE_name = "TLS Super Strength"
 end
@@ -165,15 +169,34 @@ end
 function tick(dt)
     cameraTf = GetPlayerCameraTransform(true)
     cameraForward = TransformToParentVec(cameraTf, Vec(0,0,-1))
+    
+    local engineGrab = GetPlayerGrabBody() ~= 0
 
-    -- toggle static body grabbing is the toggle button is pressed and the toggle feature is enabled
-    if InputPressed(GetString(_G, _staticGrabToggleButtonKey)) and GetBool(_G, _enableStaticGrabTogglingKey) then
-        allowGrabbingStaticBodies = not allowGrabbingStaticBodies
-        allowGrabbingStaticBodiesUiTimer = 0
+    -- only get input when player can use tool, hopefully this'll make creative work better
+    if GetBool("game.player.canusetool") or engineGrab then
+    
+        -- toggle static body grabbing is the toggle button is pressed and the toggle feature is enabled
+        if superStrengthEnabled and InputPressed(GetString(_G, _staticGrabToggleButtonKey)) and GetBool(_G, _enableStaticGrabTogglingKey) then
+            allowGrabbingStaticBodies = not allowGrabbingStaticBodies
+            allowGrabbingStaticBodiesUiTimer = 0
+        end
+        
+        -- super strength toggle
+        if InputPressed(GetString(_G, _toggleSuperStrengthButtonKey)) then
+            superStrengthEnabled = not superStrengthEnabled
+            superStrengthEnabledUiTimer = 0
+            
+            -- try to transfer grab if the player was already grabbing something
+            if superStrengthEnabled and engineGrab then
+                ReleasePlayerGrab()
+                AttemptGrab()
+            end
+        end
+
     end
 
     -- attempt to grab a body if grab is both held AND pressed
-    if InputDown("grab") and GetBool("game.player.canusetool") then
+    if superStrengthEnabled and InputDown("grab") and (GetBool("game.player.canusetool") or engineGrab) then
         if heldBody == nil and InputPressed("grab") and not InputDown("usetool") then
             AttemptGrab()
         end
@@ -253,26 +276,36 @@ end
 
 
 function draw(dt)
-    -- display a message in the top left for a while if grabbing static bodies was toggled
-    if allowGrabbingStaticBodiesUiTimer < allowGrabbingStaticBodiesUiMessageDuration then
-        UiPush()
-            UiFont("bold.ttf",48)
-            UiAlign("top left")
-            UiTranslate(24, 100)
-            
-            local opacity = (allowGrabbingStaticBodiesUiMessageDuration-allowGrabbingStaticBodiesUiTimer)/(allowGrabbingStaticBodiesUiMessageDuration*0.125)
-            
-            UiColor(1, 1, 1, opacity)
-            
-            UiTextOutline(0,0,0,opacity,0.4)
-            
-            if allowGrabbingStaticBodies then
-                UiText("Static body grabbing is now enabled.")
-            else
-                UiText("Static body grabbing is now disabled.")
-            end
-   
-        UiPop()
-        allowGrabbingStaticBodiesUiTimer = allowGrabbingStaticBodiesUiTimer + dt
+    UiPush()
+        UiFont("bold.ttf",48)
+        UiAlign("top left")
+        UiTranslate(24, 100)
+
+        -- display a message in the top left for a while if grabbing static bodies was toggled
+        if DrawStateChangeMessage("Static body grabbing is now ", allowGrabbingStaticBodies, allowGrabbingStaticBodiesUiTimer, uiMessageDuration) then
+            allowGrabbingStaticBodiesUiTimer = allowGrabbingStaticBodiesUiTimer + dt
+        end
+        
+        if DrawStateChangeMessage("Super strength is now ", superStrengthEnabled, superStrengthEnabledUiTimer, uiMessageDuration) then
+            superStrengthEnabledUiTimer = superStrengthEnabledUiTimer + dt
+        end
+    UiPop()
+end
+
+function DrawStateChangeMessage(message, state, timer, duration)
+    if timer >= duration then return false end
+
+    local opacity = (duration-timer)/(duration*0.125)
+    
+    UiColor(1, 1, 1, opacity)
+    
+    UiTextOutline(0,0,0,opacity,0.4)
+    
+    if state then
+        UiText(message.."enabled.", true)
+    else
+        UiText(message.."disabled.", true)
     end
+
+    return true
 end

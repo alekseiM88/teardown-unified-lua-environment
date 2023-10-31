@@ -8,14 +8,9 @@ function init()
 end
 
 function tick()
-
     -- input
-    if GetString(_G, _staticGrabToggleButtonKey) == "?" then
-        local lastPressedKey = InputLastPressedKey()
-        if lastPressedKey ~= "" then
-            SetString(_G, _staticGrabToggleButtonKey, lastPressedKey)
-        end
-    end
+    UpdateInputForKey(_staticGrabToggleButtonKey)
+    UpdateInputForKey(_toggleSuperStrengthButtonKey)
 end
 
 function draw()
@@ -33,6 +28,10 @@ function draw()
             -- left side
             UiAlign("right")
             UiPush()
+                UiText("The super strength toggle key is:")
+                
+                UiTranslate(0, LINEMARGIN)
+            
                 UiText("Static body grabbing defaults to being:")
                 
                 UiTranslate(0, LINEMARGIN)
@@ -42,7 +41,7 @@ function draw()
                 UiTranslate(0, LINEMARGIN)
                 
                 if canGrabStaticBodies then
-                    UiText("The toggle key is:")
+                    UiText("The static body grabbing toggle key is:")
                 end
             UiPop()
             
@@ -52,6 +51,11 @@ function draw()
                 UiTranslate(10, -TEXTSIZE/4)
                 
                 UiAlign("middle left")
+                
+                if UiTextButton(GetString(_G, _toggleSuperStrengthButtonKey), BUTTONWIDTH, TEXTSIZE) then
+                    SetString(_G, _toggleSuperStrengthButtonKey, "?")
+                end
+                UiTranslate(0, LINEMARGIN)
                 
                 DrawToggleButton(_defaultStaticGrabStateKey)
                 UiTranslate(0, LINEMARGIN)
@@ -85,5 +89,14 @@ function DrawToggleButton(registryKey)
     local value = GetBool(_G, registryKey)
     if UiTextButton(value and "Enabled" or "Disabled", BUTTONWIDTH, TEXTSIZE) then
         SetBool(_G, registryKey, not value)
+    end
+end
+
+function UpdateInputForKey(registryKey)
+    if GetString(_G, registryKey) == "?" then
+        local lastPressedKey = InputLastPressedKey()
+        if lastPressedKey ~= "" then
+            SetString(_G, registryKey, lastPressedKey)
+        end
     end
 end
