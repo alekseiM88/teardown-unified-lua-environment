@@ -9,6 +9,19 @@ function ULE_ProtectedRawCall(context, functionName, ...)
     if not succeeded then DebugPrint(message) end
 end
 
+function ULE_ProtectedRawCallOnContexts(contexts, functionName, ...)
+    for name, context in pairs(contexts) do
+
+        local func = rawget(context, functionName)
+        
+        if func then
+            local succeeded, message = pcall(func, unpack(arg))
+            
+            if not succeeded then DebugPrint(message) end
+        end
+    end
+end
+
 --#include replacement that work in ULE, paths should still work as relative, you will probably always pass in _G as the context
 function ULE_IncludeLua(context, path)
 

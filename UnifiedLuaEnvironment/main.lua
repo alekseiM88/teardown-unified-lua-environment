@@ -7,7 +7,7 @@
 #include "ule_function_overrides.lua"
 
 lateInitCalled = lateInitCalled or false
-
+isLoading = false
 
 function init()
     ULE_Init()
@@ -17,7 +17,6 @@ function init()
     for i, key in ipairs(allMods) do
     
         local fullKey = "mods.available."..key
-        
         
         local modName = GetString(fullKey..".listname")
 
@@ -47,7 +46,8 @@ function ULE_InitModListAndDestroySource(context, paths)
 
     -- add mods
     for name, path in pairs(paths) do
-        local gTable = ULE_AddMod(name, context.ULE_rawPath, context.ULE_modRegistryKey.."-"..string.gsub(path, ".lua", ""), path)
+        local gTable = ULE_AddMod(name, context.ULE_rawPath, context.ULE_modRegistryKey.."-"..string.gsub(path, ".lua", ""), path, isLoading)
+
         if gTable then
             addedMods[name] = gTable
         end
@@ -95,6 +95,7 @@ function ULE_AddMod(name, directory, regKey, filePath, reload)
     modGTable.ULE_modKey = name -- key in ULE_mods
     modGTable.ULE_modRegistryKey = regKey -- key in the registry under availablemods
     modGTable.ULE_rawPath = directory
+    modGTable.ULE_fileName = filePath
 
     modGTable._G = modGTable
 
@@ -103,6 +104,7 @@ function ULE_AddMod(name, directory, regKey, filePath, reload)
     
     -- execute
     newMod()
+
     
     -- run init
     if not reload then
@@ -158,49 +160,34 @@ function ULE_FindModNameByULEName(ulename)
 end
 
 function tick(dt)
+
     
     -- Call ULE_LateInit on first frame after int. All mods are initialized at this point and they can interact safely at this time.
     if not lateInitCalled then
-        local modLateInit = nil
-        for modName, gTable in pairs(ULE_mods) do
-            ULE_ProtectedRawCall(gTable, "ULE_LateInit")
-        end
+        ULE_ProtectedRawCallOnContexts(ULE_mods, "ULE_LateInit")
         lateInitCalled = true
     end
 
     -- Update lerp values, so the overridden SetValue functions correctly.
     ULE_UpateLerpValues(dt)
 
+    ULE_ProtectedRawCallOnContexts(ULE_mods, "tick", dt)
 
-    for modName, gTable in pairs(ULE_mods) do
-        ULE_ProtectedRawCall(gTable, "tick", dt)
-    end
-    
-    for modName, gTable in pairs(ULE_mods) do
-        ULE_ProtectedRawCall(gTable, "ULE_PostTick", dt)
-    end
+    ULE_ProtectedRawCallOnContexts(ULE_mods, "ULE_PostTick", dt)
 end
 
 
 function update(dt)
-    for modName, gTable in pairs(ULE_mods) do
-        ULE_ProtectedRawCall(gTable, "update", dt)
-    end
+    ULE_ProtectedRawCallOnContexts(ULE_mods, "update", dt)
     
-    for modName, gTable in pairs(ULE_mods) do
-        ULE_ProtectedRawCall(gTable, "ULE_PostUpdate", dt)
-    end
+    ULE_ProtectedRawCallOnContexts(ULE_mods, "ULE_PostUpdate", dt)
 end
 
 
 function draw(dt)
-    for modName, gTable in pairs(ULE_mods) do
-        ULE_ProtectedRawCall(gTable, "draw", dt)
-    end
-    
-    for modName, gTable in pairs(ULE_mods) do
-        ULE_ProtectedRawCall(gTable, "ULE_PostDraw", dt)
-    end
+    ULE_ProtectedRawCallOnContexts(ULE_mods, "draw", dt)
+
+    ULE_ProtectedRawCallOnContexts(ULE_mods, "ULE_PostDraw", dt)
 end
 
 
@@ -208,13 +195,13 @@ function handleCommand(command)
     -- partial reinit of all loaded mods
     if command == "quickload" then
         ULE_Init()
-    
+        
+        isLoading = true
         for modName, gTable in pairs(ULE_mods) do
-            ULE_AddMod(modName, gTable.ULE_rawPath, gTable.ULE_modRegistryKey, nil, true)
+            ULE_AddMod(modName, gTable.ULE_rawPath, gTable.ULE_modRegistryKey, gTable.ULE_fileName, true)
         end
+        isLoading = false
     end
 
-    for modName, gTable in pairs(ULE_mods) do
-        ULE_ProtectedRawCall(gTable, "handleCommand", command)
-    end
+    ULE_ProtectedRawCallOnContexts(ULE_mods, "handleCommand", command)
 end
