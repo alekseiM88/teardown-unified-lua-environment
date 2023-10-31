@@ -40,15 +40,23 @@ end
 
 -- run ULE_AddMod on a table of lua files with keys as names and values as local paths, then ULE_DestroyMod on the source.
 -- The filenames in paths should not have any non-alphanumeric characters, as the filenames will be used to create their savegame registry keys
+-- returns table of mods added, where keys are the mod names and values are their environment tables
 function ULE_InitModListAndDestroySource(context, paths)
+
+    local addedMods = {}
 
     -- add mods
     for name, path in pairs(paths) do
-        ULE_AddMod(name, context.ULE_rawPath, context.ULE_modRegistryKey.."-"..string.gsub(path, ".lua", ""), path)
+        local gTable = ULE_AddMod(name, context.ULE_rawPath, context.ULE_modRegistryKey.."-"..string.gsub(path, ".lua", ""), path)
+        if gTable then
+            addedMods[name] = gTable
+        end
     end
     
     -- destroy source
     ULE_DestroyMod(context.ULE_modKey)
+
+    return addedMods
 end
 
 -- path is aboslute, name is string
@@ -101,7 +109,7 @@ function ULE_AddMod(name, directory, regKey, filePath, reload)
         ULE_ProtectedRawCall(modGTable, "init")
     end
     
-    return true
+    return modGTable
 end
 
 -- remove a mod from ULE_mods, calling ULE_OnDestroy() and then set all present indices to nil
@@ -167,6 +175,10 @@ function tick(dt)
     for modName, gTable in pairs(ULE_mods) do
         ULE_ProtectedRawCall(gTable, "tick", dt)
     end
+    
+    for modName, gTable in pairs(ULE_mods) do
+        ULE_ProtectedRawCall(gTable, "ULE_PostTick", dt)
+    end
 end
 
 
@@ -174,12 +186,20 @@ function update(dt)
     for modName, gTable in pairs(ULE_mods) do
         ULE_ProtectedRawCall(gTable, "update", dt)
     end
+    
+    for modName, gTable in pairs(ULE_mods) do
+        ULE_ProtectedRawCall(gTable, "ULE_PostUpdate", dt)
+    end
 end
 
 
 function draw(dt)
     for modName, gTable in pairs(ULE_mods) do
         ULE_ProtectedRawCall(gTable, "draw", dt)
+    end
+    
+    for modName, gTable in pairs(ULE_mods) do
+        ULE_ProtectedRawCall(gTable, "ULE_PostDraw", dt)
     end
 end
 

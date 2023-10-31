@@ -278,13 +278,14 @@ function drawMain(dt)
             UiWordWrap(UiWidth()-45)
         
             UiFont("RobotoMono-Regular.ttf", FONTSIZE)
-            UiAlign("left top")
-            
+
             UiTranslate(TEXTMARGIN, TEXTMARGIN)
             UiText("NAME: "..selectedMod.name, true)
             
             UiTranslate(0, TEXTMARGIN)
             UiText("DESC: "..selectedMod.description, true)
+            
+            UiAlign("left top")
             
             UiTranslate(0, TEXTMARGIN*2)
             UiPush()
