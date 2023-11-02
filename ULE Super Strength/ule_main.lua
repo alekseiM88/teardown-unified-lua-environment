@@ -27,6 +27,9 @@ function init()
 
     cameraTf = nil
     cameraForward = nil
+    
+    allowGrabbingStaticBodies = GetBool(_G, _defaultStaticGrabStateKey)
+    superStrengthEnabled = true
 
     ULE_name = "TLS Super Strength"
 end
