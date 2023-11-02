@@ -1,4 +1,4 @@
-name = 3D Triangle Rasterization and Mesh Rendering Module for the ULE
+name = [ULE] ULE3D Triangle Mesh Rendering
 author = TextureLikeSun/erratis
 description = Very high performance impact, please use sparingly.
 tags=tool
