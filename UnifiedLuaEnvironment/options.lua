@@ -1,5 +1,7 @@
-#include "ule_common.lua"
 #include "ule_function_overrides.lua"
+#include "ule_common.lua"
+#include "ule_ui.lua"
+
 
 SIDEMARGIN = 6
 SIDEMARGINDOUBLE = SIDEMARGIN*2

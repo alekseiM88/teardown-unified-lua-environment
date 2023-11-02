@@ -27,15 +27,7 @@ function init()
 
     cameraTf = nil
     cameraForward = nil
-    
-    uiMessageDuration = 1.25
-    
-    allowGrabbingStaticBodies = GetBool(_G, _defaultStaticGrabStateKey)
-    allowGrabbingStaticBodiesUiTimer = 999
-    
-    superStrengthEnabledUiTimer = 999
-    superStrengthEnabled = true
-    
+
     ULE_name = "TLS Super Strength"
 end
 
@@ -178,13 +170,23 @@ function tick(dt)
         -- toggle static body grabbing is the toggle button is pressed and the toggle feature is enabled
         if superStrengthEnabled and InputPressed(GetString(_G, _staticGrabToggleButtonKey)) and GetBool(_G, _enableStaticGrabTogglingKey) then
             allowGrabbingStaticBodies = not allowGrabbingStaticBodies
-            allowGrabbingStaticBodiesUiTimer = 0
+            
+            if allowGrabbingStaticBodies then
+                ULE_notifier.AddNotification("Static body grabbing is now enabled.", nil, {0, 0.9, 0.2})
+            else
+                ULE_notifier.AddNotification("Static body grabbing is now disabled.", nil, {0.9, 0.2, 0.2})
+            end
         end
         
         -- super strength toggle
         if InputPressed(GetString(_G, _toggleSuperStrengthButtonKey)) then
             superStrengthEnabled = not superStrengthEnabled
-            superStrengthEnabledUiTimer = 0
+            
+            if superStrengthEnabled then
+                ULE_notifier.AddNotification("Super strength is now enabled.", nil, {0, 0.9, 0.2})
+            else
+                ULE_notifier.AddNotification("Super strength is now disabled.", nil, {0.9, 0.2, 0.2})
+            end
             
             -- try to transfer grab if the player was already grabbing something
             if superStrengthEnabled and engineGrab then
@@ -272,40 +274,4 @@ function update(dt)
         rotationTf = TransformToLocalTransform(cameraTf, rotationTf)
     end
 
-end
-
-
-function draw(dt)
-    UiPush()
-        UiFont("bold.ttf",48)
-        UiAlign("top left")
-        UiTranslate(24, 100)
-
-        -- display a message in the top left for a while if grabbing static bodies was toggled
-        if DrawStateChangeMessage("Static body grabbing is now ", allowGrabbingStaticBodies, allowGrabbingStaticBodiesUiTimer, uiMessageDuration) then
-            allowGrabbingStaticBodiesUiTimer = allowGrabbingStaticBodiesUiTimer + dt
-        end
-        
-        if DrawStateChangeMessage("Super strength is now ", superStrengthEnabled, superStrengthEnabledUiTimer, uiMessageDuration) then
-            superStrengthEnabledUiTimer = superStrengthEnabledUiTimer + dt
-        end
-    UiPop()
-end
-
-function DrawStateChangeMessage(message, state, timer, duration)
-    if timer >= duration then return false end
-
-    local opacity = (duration-timer)/(duration*0.125)
-    
-    UiColor(1, 1, 1, opacity)
-    
-    UiTextOutline(0,0,0,opacity,0.4)
-    
-    if state then
-        UiText(message.."enabled.", true)
-    else
-        UiText(message.."disabled.", true)
-    end
-
-    return true
 end

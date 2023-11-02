@@ -43,3 +43,31 @@ function ULE_IncludeLua(context, path)
     -- execute
     luaFile()
 end
+
+-- helper function. context is Lua environment, key is the undetoured registry key, data is the data to be held at that key,
+-- and if reset is true then the data will be overridden regardless of if that key already exists
+-- will forcefully reset string if it is '?'
+function ULE_InitializePersistentRegistryKey(context, key, data, reset)
+    local dataType = type(data)
+
+    -- '?' case
+    if dataType == "string" and GetString(context, key) == "?" then
+        reset = true
+    end
+    
+    if (HasKey(context, key) and not reset) then return end
+    
+    if dataType == "number" then
+        if math.floor(data) == data then -- integer
+            SetInt(context, key, data)
+        else -- float
+            SetFloat(context, key, data)
+        end
+    elseif dataType == "string" then
+        SetString(context, key, data)
+    elseif dataType == "boolean" then
+        SetBool(context, key, data)
+    else
+        DebugPrint("ULE: Cannot initialize persistent registry key at path: "..key..". The type of 'data' is not valid.")
+    end
+end

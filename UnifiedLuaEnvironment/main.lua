@@ -3,8 +3,11 @@
 
 -- methods are ULE_PascalCase, variables are ULE_camelCase
 
-#include "ule_common.lua"
 #include "ule_function_overrides.lua"
+#include "ule_common.lua"
+#include "ule_ui.lua"
+#include "ule_notifier.lua"
+
 
 lateInitCalled = lateInitCalled or false
 isLoading = false
@@ -188,6 +191,9 @@ function draw(dt)
     ULE_ProtectedRawCallOnContexts(ULE_mods, "draw", dt)
 
     ULE_ProtectedRawCallOnContexts(ULE_mods, "ULE_PostDraw", dt)
+    
+    -- draw and update the notification system
+    ULE_notifier.Update(dt)
 end
 
 
