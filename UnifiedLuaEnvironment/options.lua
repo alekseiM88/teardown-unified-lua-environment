@@ -17,7 +17,8 @@ local realMenu = realMenu or Menu
 
 
 function init()
-
+    ULE_SetupUi()
+    
     ULE_optionsFadeOpacity = ULE_optionsFadeOpacity or 0
 
     availableMods = {}

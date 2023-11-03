@@ -38,6 +38,9 @@ function ULE_Init()
     -- g metatable for all g tables
     ULE_gMetatable = ULE_gMetatable or {}
     ULE_gMetatable.__index = _G
+    
+    ULE_SetupNotifier()
+    ULE_SetupUi()
 end
 
 -- run ULE_AddMod on a table of lua files with keys as names and values as local paths, then ULE_DestroyMod on the source.
@@ -191,7 +194,7 @@ function draw(dt)
     ULE_ProtectedRawCallOnContexts(ULE_mods, "draw", dt)
 
     ULE_ProtectedRawCallOnContexts(ULE_mods, "ULE_PostDraw", dt)
-    
+
     -- draw and update the notification system
     ULE_notifier.Update(dt)
 end
