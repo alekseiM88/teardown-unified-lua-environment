@@ -1,9 +1,9 @@
 -- detour built-in functions to make them work properly with different lua contexts and ULE complications
 
-local realSetValue = SetValue
+realSetValue = SetValue
 
 -- reimplemented SetValue
-local ULE_lerpValues = {}
+ULE_lerpValues = {}
 
 -- context is _G, more or less
 function SetValue(lerpContext, variable, value, transition, duration, callback)
