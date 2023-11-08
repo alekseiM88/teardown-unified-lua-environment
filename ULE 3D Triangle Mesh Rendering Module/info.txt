@@ -1,5 +1,5 @@
 name = [ULE] ULE3D Triangle Mesh Rendering
 author = TextureLikeSun/erratis
-description = Very high performance impact, please use sparingly.
+description = [noupload]Very high performance impact, please use sparingly.
 tags=tool
 

@@ -22,7 +22,7 @@ function SetValue(lerpContext, variable, value, transition, duration, callback)
     }
 end
 
-function ULE_UpateLerpValues(dt)
+function ULE_UpdateLerpValues(dt)
 
     if #ULE_lerpValues < 1 then
         return

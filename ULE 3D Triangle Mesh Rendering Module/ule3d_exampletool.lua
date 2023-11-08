@@ -7,6 +7,10 @@ function init()
 	SetBool("game.tool.ule3dexampletool.enabled", true)
 end
 
+function ULE_OnDestroy()
+    SetBool("game.tool.ule3dexampletool.enabled", false)
+end
+
 function ULE_LateInit()
     -- keep a reference to ule3d
     ule3d = ULE_FindModByULEName("ULE3D")

@@ -7,10 +7,12 @@
 #include "ule_common.lua"
 #include "ule_ui.lua"
 #include "ule_notifier.lua"
+#include "ule_optionsmenu.lua"
 
 
 lateInitCalled = lateInitCalled or false
 isLoading = false
+
 
 function init()
     ULE_Init()
@@ -34,6 +36,7 @@ end
 function ULE_Init()
     -- 'g' tables of all loaded mods
     ULE_mods = ULE_mods or {}
+    ULE_modManagerActive = false
     
     -- g metatable for all g tables
     ULE_gMetatable = ULE_gMetatable or {}
@@ -41,12 +44,38 @@ function ULE_Init()
     
     ULE_SetupNotifier()
     ULE_SetupUi()
+    ULE_SetupOptionsMenu()
+    
+    -- override mod manager exit function
+    ULE_optionsMenu.Exit = function()
+        UiDisableInput()
+        SetValue(ULE_optionsMenu, "ULE_optionsFadeOpacity", 1, "linear", 0.2, function()
+            ULE_modManagerActive = false
+            SetValue(ULE_optionsMenu, "ULE_optionsFadeOpacity", 0, "linear", 0.2, function()
+                UiEnableInput()
+            end)
+        end)
+        
+    end
+    
+    -- override mod state change callback
+    ULE_optionsMenu.OnModActiveStateChanged = function(mod) 
+        if mod.enabled then
+            local addedMod = ULE_AddMod(mod.name, mod.path, mod.keyName)
+            
+            -- force call late init, since we're past real initialization
+            ULE_ProtectedRawCall(addedMod, "ULE_LateInit")
+        else
+            ULE_DestroyMod(mod.name)
+        end
+    end
+
 end
 
--- run ULE_AddMod on a table of lua files with keys as names and values as local paths, then ULE_DestroyMod on the source.
+-- run ULE_AddMod on a table of lua files with keys as names and values as local paths.
 -- The filenames in paths should not have any non-alphanumeric characters, as the filenames will be used to create their savegame registry keys
 -- returns table of mods added, where keys are the mod names and values are their environment tables
-function ULE_InitModListAndDestroySource(context, paths)
+function ULE_InitModList(context, paths)
 
     local addedMods = {}
 
@@ -59,11 +88,25 @@ function ULE_InitModListAndDestroySource(context, paths)
         end
     end
     
+    -- force call late init, if we're past real initialization
+    if lateInitCalled then
+        ULE_ProtectedRawCallOnContexts(addedMods, "ULE_LateInit")
+    end
+   
+    return addedMods
+end
+
+-- same as above except the source is then destroyed with ULE_DestroyMod. It is recommended that you don't use this function, as it can break hotloading.
+function ULE_InitModListAndDestroySource(context, paths)
+
+    local addedMods = ULE_InitModList(context, paths)
+    
     -- destroy source
     ULE_DestroyMod(context.ULE_modKey)
 
     return addedMods
 end
+
 
 -- path is aboslute, name is string
 function ULE_AddMod(name, directory, regKey, filePath, reload)
@@ -76,6 +119,7 @@ function ULE_AddMod(name, directory, regKey, filePath, reload)
         return false
     end
 
+    -- load mod data from file
     local newMod = loadfile(absoluteDirectory)
 
     if type(newMod) ~= "function" then
@@ -85,7 +129,7 @@ function ULE_AddMod(name, directory, regKey, filePath, reload)
    
    
     if ULE_mods[name] ~= nil then
-        if not reload then 
+        if not reload and not ULE_mods[name].ULE_isDestroyed then 
             DebugPrint("ULE: Mod of name '"..name.."' already exists.")
             return true
         end
@@ -111,7 +155,6 @@ function ULE_AddMod(name, directory, regKey, filePath, reload)
     -- execute
     newMod()
 
-    
     -- run init
     if not reload then
         ULE_ProtectedRawCall(modGTable, "init")
@@ -127,6 +170,11 @@ function ULE_DestroyMod(name)
    
     local gTable = ULE_mods[name]
     
+    if gTable == nil then
+        DebugPrint("ULE: Could not destroy mod of name '"..name.."'. Mod could not be found in ULE_mods.")
+        return
+    end
+    
     ULE_ProtectedRawCall(gTable, "ULE_OnDestroy")
     
     -- remove metatable and nil out all indices of mod's gTable
@@ -135,7 +183,10 @@ function ULE_DestroyMod(name)
         gTable[k] = nil
     end
    
-    ULE_mods[name] = nil
+    -- flag that this mod is destroyed
+    gTable.ULE_isDestroyed = true
+    
+    --ULE_mods[name] = nil
 end
 
 -- returns gTable of mod, linear search, name is name of mod, returns nil if mod wasn't found
@@ -166,7 +217,22 @@ function ULE_FindModNameByULEName(ulename)
 end
 
 function tick(dt)
+    -- mod manager toggling
+    if PauseMenuButton("ULE Mod Manager", true) then
+        UiDisableInput()
+        SetValue(ULE_optionsMenu, "ULE_optionsFadeOpacity", 1, "linear", 0.2, function()
+            ULE_modManagerActive = true
+            UiEnableInput()
+            ULE_optionsMenu.Init()
+        end)
+    end
 
+    if ULE_modManagerActive then
+        ULE_optionsMenu.Tick(dt)
+        if InputPressed("pause") then
+            ULE_optionsMenu.Exit()
+        end
+    end
     
     -- Call ULE_LateInit on first frame after int. All mods are initialized at this point and they can interact safely at this time.
     if not lateInitCalled then
@@ -175,7 +241,7 @@ function tick(dt)
     end
 
     -- Update lerp values, so the overridden SetValue functions correctly.
-    ULE_UpateLerpValues(dt)
+    ULE_UpdateLerpValues(dt)
 
     ULE_ProtectedRawCallOnContexts(ULE_mods, "tick", dt)
 
@@ -184,6 +250,10 @@ end
 
 
 function update(dt)
+    if ULE_modManagerActive then
+        ULE_optionsMenu.Update(dt)
+    end
+
     ULE_ProtectedRawCallOnContexts(ULE_mods, "update", dt)
     
     ULE_ProtectedRawCallOnContexts(ULE_mods, "ULE_PostUpdate", dt)
@@ -191,12 +261,31 @@ end
 
 
 function draw(dt)
-    ULE_ProtectedRawCallOnContexts(ULE_mods, "draw", dt)
+    if ULE_modManagerActive then
+        UiPush()
+            UiColor(0,0,0,1)
+            UiRect(UiWidth(), UiHeight())
+            UiColor(1,1,1,1)
+            UiMakeInteractive()
+            ULE_optionsMenu.Draw(dt)
+        UiPop()
+        return -- return, stop other mods from drawing
+    end
 
-    ULE_ProtectedRawCallOnContexts(ULE_mods, "ULE_PostDraw", dt)
+    UiPush()
+        ULE_ProtectedRawCallOnContexts(ULE_mods, "draw", dt)
+
+        ULE_ProtectedRawCallOnContexts(ULE_mods, "ULE_PostDraw", dt)
+    UiPop()
 
     -- draw and update the notification system
     ULE_notifier.Update(dt)
+    
+    -- mild hack for mod manager fade
+    if not ULE_modManagerActive then
+        UiColor(0, 0, 0, ULE_optionsMenu.ULE_optionsFadeOpacity)
+        UiRect(UiWidth(), UiHeight())
+    end
 end
 
 
