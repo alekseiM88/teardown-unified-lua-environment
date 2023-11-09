@@ -1,7 +1,7 @@
 -- ule3d bootstrapper
 ULE_IncludeLua(_G, "ule3d_shared.lua")
 
-paths = { ["ule3d"] = "ule3d_main.lua" }
+paths = paths or { ["ule3d"] = "ule3d_main.lua" }
 
 function init()
     InitializePersistentData()

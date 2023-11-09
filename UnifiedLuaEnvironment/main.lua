@@ -146,6 +146,7 @@ function ULE_AddMod(name, directory, regKey, filePath, reload)
     modGTable.ULE_modRegistryKey = regKey -- key in the registry under availablemods
     modGTable.ULE_rawPath = directory
     modGTable.ULE_fileName = filePath
+    modGTable.ULE_isDestroyed = false
 
     modGTable._G = modGTable
 
