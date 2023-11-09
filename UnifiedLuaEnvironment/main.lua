@@ -224,6 +224,7 @@ function tick(dt)
         SetValue(ULE_optionsMenu, "ULE_optionsFadeOpacity", 1, "linear", 0.2, function()
             ULE_modManagerActive = true
             UiEnableInput()
+            ULE_optionsMenu.modOptionsGTable = nil
             ULE_optionsMenu.Init()
         end)
     end
@@ -297,7 +298,9 @@ function handleCommand(command)
         
         isLoading = true
         for modName, gTable in pairs(ULE_mods) do
-            ULE_AddMod(modName, gTable.ULE_rawPath, gTable.ULE_modRegistryKey, gTable.ULE_fileName, true)
+            if not gTable.ULE_isDestroyed then
+                ULE_AddMod(modName, gTable.ULE_rawPath, gTable.ULE_modRegistryKey, gTable.ULE_fileName, true)
+            end
         end
         isLoading = false
     end
