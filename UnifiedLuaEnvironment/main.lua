@@ -230,9 +230,19 @@ function tick(dt)
     end
 
     if ULE_modManagerActive then
+        SetBool("game.disablepause", true)
+        SetBool("game.disablemap", true)
+        SetBool("game.player.disableinput", true)
+    
         ULE_optionsMenu.Tick(dt)
+        
+        -- hacky back buttons
         if InputPressed("pause") then
-            ULE_optionsMenu.Exit()
+            if ULE_optionsMenu.modOptionsGTable then
+                ULE_optionsMenu.FakeMenu()
+            else
+                ULE_optionsMenu.Exit()
+            end
         end
     end
     
