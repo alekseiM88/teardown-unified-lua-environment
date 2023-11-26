@@ -245,6 +245,7 @@ function update(dt)
     
     cameraTf = GetPlayerCameraTransform(true)
     cameraForward = TransformToParentVec(cameraTf, Vec(0,0,-1))
+    local playerVelocity = GetPlayerVelocity()
 
     local bodyTf = GetBodyTransform(heldBody)
     local globalHeldPosition = TransformToParentPoint(bodyTf, heldPosition)
@@ -253,7 +254,7 @@ function update(dt)
     -- linear velocity
     local bodyVelocity = GetBodyVelocityAtPos(heldBody, globalHeldPosition)
     
-    local idealVelocity = VecSub(VecAdd(cameraTf.pos, VecScale(cameraForward, holdDistance)), globalHeldPosition)
+    local idealVelocity = VecSub(VecAdd(VecAdd(cameraTf.pos, VecScale(playerVelocity, 0.055)), VecScale(cameraForward, holdDistance)), globalHeldPosition)
     
     local bodyMass = GetBodyMass(heldBody)
     

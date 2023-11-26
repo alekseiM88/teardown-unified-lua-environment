@@ -83,6 +83,7 @@ function ULE_SetupOptionsMenu()
             if mod.enabled then
                 -- add key to mods if enabled
                 SetBool("savegame.mod.mods."..mod.keyName, true)
+                SetString("savegame.mod.mods."..mod.keyName..".listname", mod.name) -- store listname so that we can error correctly
             else
                 -- otherwise clear
                 ClearKey("savegame.mod.mods."..mod.keyName)

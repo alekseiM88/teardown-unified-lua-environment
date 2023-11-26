@@ -22,8 +22,15 @@ function init()
     for i, key in ipairs(allMods) do
     
         local fullKey = "mods.available."..key
+     
+        local modName = nil --GetString(fullKey..".listname")
         
-        local modName = GetString(fullKey..".listname")
+        if HasKey(fullKey) then
+            modName = GetString(fullKey..".listname")
+        else
+            modName = GetString("savegame.mod.mods."..key..".listname")
+        end
+        
 
         if not ULE_AddMod(modName, GetString(fullKey..".path"), key) then
             ClearKey("savegame.mod.mods."..key)
